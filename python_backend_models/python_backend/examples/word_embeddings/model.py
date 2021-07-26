@@ -1,13 +1,10 @@
+
 # contains some utility functions for extracting information from model_config
 # and converting Triton input/output types to numpy types.
 
 import triton_python_backend_utils as pb_utils
 import numpy as np
 from sentence_transformers import SentenceTransformer
-
-"""test_sent = ["Who are you voting for 2021?", "hi", "lol"]
-model = SentenceTransformer('paraphrase-mpnet-base-v2')
-sent_embed = model.encode(test_sent)"""
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -33,6 +30,11 @@ class TritonPythonModel:
         # You must parse model_config. JSON string is not parsed here
         self.model = SentenceTransformer('paraphrase-mpnet-base-v2')
 
+    def run_model(self, inp):
+        inp = [v.decode("utf-8") for v in inp.as_numpy()]
+        sentence_embeddings = self.model.encode(inp)
+        return sentence_embeddings
+
     def execute(self, requests):
         """`execute` must be implemented in every Python model. `execute`
         function receives a list of pb_utils.InferenceRequest as the only
@@ -52,21 +54,15 @@ class TritonPythonModel:
           A list of pb_utils.InferenceResponse. The length of this list must
           be the same as `requests`
         """
-
         responses = []
-
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
-        for request in requests:
+        for idx, request in enumerate(requests):
             # Get INPUT0
             in_0 = pb_utils.get_input_tensor_by_name(request, "INPUT0")
-            in_0 = in_0.as_numpy()[0].decode("utf-8")
-            sentence_embeddings = self.model.encode(in_0)
-            # Create output tensors. You need pb_utils.Tensor
-            # objects to create pb_utils.InferenceResponse.
+            emb = self.run_model(in_0)
             out_tensor_0 = pb_utils.Tensor("OUTPUT0",
-                                           np.array([sentence_embeddings], dtype=object))
-
+                                           emb)
             # Create InferenceResponse.
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[out_tensor_0])

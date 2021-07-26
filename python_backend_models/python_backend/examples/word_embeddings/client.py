@@ -1,13 +1,25 @@
+
 import tritonclient.http as httpclient
 from sentence_transformers import util
 import numpy as np
 
-model_name = "word_embeddings"
-example_input = ["This is a red cat with a hat.", "Have you seen my red cat?"]
+"example reference taken from: https://www.sbert.net/docs/quickstart.html#comparing-sentence-similarities"
 
+model_name = "word_embeddings"
+sentences = ['A man is eating food.',
+          'A man is eating a piece of bread.',
+          'The girl is carrying a baby.',
+          'A man is riding a horse.',
+          'A woman is playing violin.',
+          'Two men pushed carts through the woods.',
+          'A man is riding a white horse on an enclosed ground.',
+          'A monkey is playing drums.',
+          'Someone in a gorilla costume is playing a set of drums.'
+          ]
 def run_inference(inp_sentence):
     with httpclient.InferenceServerClient("localhost:8000") as client:
-        input0_data = np.array([inp_sentence], dtype=object)
+        input0_data = np.array(inp_sentence, dtype=object)
+        print(input0_data.shape)
         inputs = [
             httpclient.InferInput("INPUT0", input0_data.shape, "BYTES"),
         ]
@@ -19,18 +31,31 @@ def run_inference(inp_sentence):
 
         response = client.infer(model_name,
                                 inputs,
-                                request_id=str(1),
                                 outputs=outputs)
 
+        print(response.get_response())
         result = response.get_response()
         np_response = response.as_numpy("OUTPUT0").astype(float)
         return np_response
         #print(np_response.shape)
 
-embeddings = []
-for sent in example_input:
-    emb = run_inference(sent)
-    embeddings.append(emb)
+#Encode all sentences at once
+embeddings = run_inference(sentences)
+# embeddings shape
+print(embeddings.shape)
 
-cos_sim = util.cos_sim(embeddings[0], embeddings[1])
-print("Cosine-Similarity:", cos_sim)
+#Compute cosine similarity between all pairs
+cos_sim = util.cos_sim(embeddings, embeddings)
+
+#Add all pairs to a list with their cosine similarity score
+all_sentence_combinations = []
+for i in range(len(cos_sim)-1):
+    for j in range(i+1, len(cos_sim)):
+        all_sentence_combinations.append([cos_sim[i][j], i, j])
+
+#Sort list by the highest cosine similarity score
+all_sentence_combinations = sorted(all_sentence_combinations, key=lambda x: x[0], reverse=True)
+
+print("Top-5 most similar pairs:")
+for score, i, j in all_sentence_combinations[0:5]:
+    print("{} \t {} \t {:.4f}".format(sentences[i], sentences[j], cos_sim[i][j]))
