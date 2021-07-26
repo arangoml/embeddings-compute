@@ -16,4 +16,4 @@ output [
       }
 ]
 
-instance_group [{ count: 1, kind: KIND_CPU }]
+instance_group [{kind: KIND_CPU }]
