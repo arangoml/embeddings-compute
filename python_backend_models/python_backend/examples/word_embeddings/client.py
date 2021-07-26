@@ -3,7 +3,7 @@ import tritonclient.http as httpclient
 from sentence_transformers import util
 import numpy as np
 
-"example reference taken from: https://www.sbert.net/docs/quickstart.html#comparing-sentence-similarities"
+#"example reference taken from: https://www.sbert.net/docs/quickstart.html#comparing-sentence-similarities"
 
 model_name = "word_embeddings"
 sentences = ['A man is eating food.',
