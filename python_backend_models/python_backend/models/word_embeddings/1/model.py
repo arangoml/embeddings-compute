@@ -19,6 +19,10 @@ def encode(model, sentences,
            convert_to_tensor: bool = False,
            device: str = None,
            normalize_embeddings: bool = False):
+    """
+    Taken from https://github.com/UKPLab/sentence-transformers/blob/878ba712d69d329009b906dfd1a906852de57808/sentence_transformers/SentenceTransformer.py
+    Adapted to return timing breakdown of tokenization and model inference
+    """
     model.eval()
     if show_progress_bar is None:
         show_progress_bar = False
